@@ -1,0 +1,137 @@
+package com.minla.cpwb.widget;
+
+import android.app.PendingIntent;
+import android.appwidget.AppWidgetManager;
+import android.appwidget.AppWidgetProvider;
+import android.content.Context;
+import android.content.Intent;
+import android.util.Log;
+import android.widget.RemoteViews;
+
+import com.minla.cpwb.R;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class CPWBProvider extends AppWidgetProvider {
+
+    private static final String TAG = CPWBProvider.class.getSimpleName();
+    private static final String ACTION_WIDGET_CONTENT_REFRESH = "action_widget_content_refresh";
+
+    private static int index = 0;
+
+    private RemoteViews views; // 设为全局，多个相同窗口小程序共用一个视图
+    private static List<Integer> widgetIds = new ArrayList<>(); // 保存小窗口的id集合
+
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        super.onReceive(context, intent);
+        String action = intent.getAction();
+        Log.e(TAG, "---CPWBProvider--------onReceive() and action is " + action);
+        switch (action) {
+            case ACTION_WIDGET_CONTENT_REFRESH:
+                Log.e(TAG, "---CPWBProvider--------onReceive() switch start");
+                AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
+                int[] appWidgetIds = new int[widgetIds.size()];
+                for (int i = 0; i < widgetIds.size(); i++) {
+                    appWidgetIds[i] = widgetIds.get(i);
+                    Log.e(TAG, "---CPWBProvider--------onReceive() appWidgetId is " + appWidgetIds[i]);
+                }
+
+//                Log.d(TAG, "---CPWBProvider--------onReceive() switch getWidgetId start");
+                int appWidgetId[] = intent.getIntArrayExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS);
+                for (int i = 0; i < appWidgetId.length; i++)
+                Log.e(TAG, "---CPWBProvider--------onReceive() from intent array appWidgetId is " + appWidgetId[i]);
+//                this.onUpdate(context, appWidgetManager, appWidgetIds);
+
+                if (views == null){
+                    views = new RemoteViews(context.getPackageName(), R.layout.cpwb_widget_layout);
+                }
+                views.setTextViewText(R.id.txt_test_content, "onReceive()中刷新，并且index = " + index);
+                for (int i = 0; i < appWidgetId.length; i++){
+                    appWidgetManager.updateAppWidget(appWidgetId[i], views);
+                }
+                if (appWidgetId.length > 0) index++;
+//                appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetId, R.id.txt_test_content);
+                break;
+
+            default:
+                Log.e(TAG, "---CPWBProvider--------onReceive() switch default");
+                break;
+        }
+    }
+
+    /**
+     * 首次使用时调用，接受到AppWidgetManager.ACTION_APPWIDGET_ENABLED后执行
+     * 当桌面已经有此小工具，再次创建的时候不会调用
+     *
+     * @param context
+     */
+    @Override
+    public void onEnabled(Context context) {
+        Log.e(TAG, "---CPWBProvider--------onEnabled()");
+        super.onEnabled(context);
+    }
+
+    /**
+     * 每创建一个该小工具，就调用一次，接受到AppWidgetManager.ACTION_APPWIDGET_UPDATE后执行
+     *
+     * @param context
+     * @param appWidgetManager
+     * @param appWidgetIds
+     */
+    @Override
+    public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
+
+        Log.e(TAG, "---CPWBProvider--------onUpdate()");
+
+        if (views == null)
+            views = new RemoteViews(context.getPackageName(), R.layout.cpwb_widget_layout);
+
+        if (widgetIds.size() > 0) widgetIds.clear();
+
+        for (int j = 0; j < appWidgetIds.length; j++) {
+            Log.e(TAG, "---CPWBProvider--------onUpdate() appWidgetIds is " + appWidgetIds[j]);
+//            views = new RemoteViews(context.getPackageName(), R.layout.cpwb_widget_layout);
+            widgetIds.add(appWidgetIds[j]);
+            // 设置广播绑定刷新按钮点击
+            Intent refreshIntent = new Intent(context, CPWBProvider.class); // 从该广播调到该广播
+            refreshIntent.setAction(ACTION_WIDGET_CONTENT_REFRESH);
+            refreshIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetIds);
+            PendingIntent refreshPendingIntent = PendingIntent.getBroadcast(context, 0,
+                    refreshIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+            views.setOnClickPendingIntent(R.id.ibtn_refresh, refreshPendingIntent);
+
+            // 设置文本内容
+            views.setTextViewText(R.id.txt_test_content, "在onUpdate()中刷新，并且index = " + index);
+            appWidgetManager.updateAppWidget(appWidgetIds[j], views);
+        }
+
+        if (appWidgetIds.length > 0) index++;
+
+        super.onUpdate(context, appWidgetManager, appWidgetIds);
+    }
+
+    /**
+     * 删除一个该窗口小工具就调用一次，接受到AppWidgetManager.ACTION_APPWIDGET_DELETED后执行
+     *
+     * @param context
+     * @param appWidgetIds
+     */
+    @Override
+    public void onDeleted(Context context, int[] appWidgetIds) {
+        Log.e(TAG, "---CPWBProvider--------onDeleted()");
+        super.onDeleted(context, appWidgetIds);
+    }
+
+    /**
+     * 桌面上所有该小工具后执行一次，接受到AppWidgetManager.ACTION_APPWIDGET_DISABLED后执行
+     *
+     * @param context
+     */
+    @Override
+    public void onDisabled(Context context) {
+        Log.e(TAG, "---CPWBProvider--------onDisabled()");
+        super.onDisabled(context);
+    }
+}

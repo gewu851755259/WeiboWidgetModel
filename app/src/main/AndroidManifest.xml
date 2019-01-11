@@ -1,0 +1,28 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.minla.cpwb">
+
+    <application
+        android:name=".CPWBApplication"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme" >
+
+        <!-- 注册窗口小工具provider的广播 -->
+        <receiver android:name=".widget.CPWBProvider"
+            android:label="模仿微博">
+
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/cpwb_widget_info"/>
+        </receiver>
+
+
+    </application>
+</manifest>
