@@ -3,6 +3,7 @@ package com.minla.cpwb.widget;
 import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
@@ -20,9 +21,6 @@ public class CPWBProvider extends AppWidgetProvider {
 
     private static int index = 0;
 
-    private RemoteViews views; // 设为全局，多个相同窗口小程序共用一个视图
-    private static List<Integer> widgetIds = new ArrayList<>(); // 保存小窗口的id集合
-
     @Override
     public void onReceive(Context context, Intent intent) {
         super.onReceive(context, intent);
@@ -31,28 +29,10 @@ public class CPWBProvider extends AppWidgetProvider {
         switch (action) {
             case ACTION_WIDGET_CONTENT_REFRESH:
                 Log.e(TAG, "---CPWBProvider--------onReceive() switch start");
-                AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
-                int[] appWidgetIds = new int[widgetIds.size()];
-                for (int i = 0; i < widgetIds.size(); i++) {
-                    appWidgetIds[i] = widgetIds.get(i);
-                    Log.e(TAG, "---CPWBProvider--------onReceive() appWidgetId is " + appWidgetIds[i]);
-                }
-
-//                Log.d(TAG, "---CPWBProvider--------onReceive() switch getWidgetId start");
-                int appWidgetId[] = intent.getIntArrayExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS);
-                for (int i = 0; i < appWidgetId.length; i++)
-                Log.e(TAG, "---CPWBProvider--------onReceive() from intent array appWidgetId is " + appWidgetId[i]);
-//                this.onUpdate(context, appWidgetManager, appWidgetIds);
-
-                if (views == null){
-                    views = new RemoteViews(context.getPackageName(), R.layout.cpwb_widget_layout);
-                }
+                RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.cpwb_widget_layout);
                 views.setTextViewText(R.id.txt_test_content, "onReceive()中刷新，并且index = " + index);
-                for (int i = 0; i < appWidgetId.length; i++){
-                    appWidgetManager.updateAppWidget(appWidgetId[i], views);
-                }
-                if (appWidgetId.length > 0) index++;
-//                appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetId, R.id.txt_test_content);
+                index++;
+                refreshWidget(context, views, false);
                 break;
 
             default:
@@ -82,32 +62,23 @@ public class CPWBProvider extends AppWidgetProvider {
      */
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
-
         Log.e(TAG, "---CPWBProvider--------onUpdate()");
 
-        if (views == null)
-            views = new RemoteViews(context.getPackageName(), R.layout.cpwb_widget_layout);
+        for (int appWidgetId : appWidgetIds) {
+            Log.e(TAG, "---CPWBProvider--------onUpdate() appWidgetIds is " + appWidgetId);
+            RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.cpwb_widget_layout);
 
-        if (widgetIds.size() > 0) widgetIds.clear();
-
-        for (int j = 0; j < appWidgetIds.length; j++) {
-            Log.e(TAG, "---CPWBProvider--------onUpdate() appWidgetIds is " + appWidgetIds[j]);
-//            views = new RemoteViews(context.getPackageName(), R.layout.cpwb_widget_layout);
-            widgetIds.add(appWidgetIds[j]);
             // 设置广播绑定刷新按钮点击
             Intent refreshIntent = new Intent(context, CPWBProvider.class); // 从该广播调到该广播
             refreshIntent.setAction(ACTION_WIDGET_CONTENT_REFRESH);
-            refreshIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetIds);
             PendingIntent refreshPendingIntent = PendingIntent.getBroadcast(context, 0,
                     refreshIntent, PendingIntent.FLAG_UPDATE_CURRENT);
             views.setOnClickPendingIntent(R.id.ibtn_refresh, refreshPendingIntent);
 
             // 设置文本内容
-            views.setTextViewText(R.id.txt_test_content, "在onUpdate()中刷新，并且index = " + index);
-            appWidgetManager.updateAppWidget(appWidgetIds[j], views);
+            views.setTextViewText(R.id.txt_test_content, "在onUpdate()中初始化" + index);
+            appWidgetManager.updateAppWidget(appWidgetId, views);
         }
-
-        if (appWidgetIds.length > 0) index++;
 
         super.onUpdate(context, appWidgetManager, appWidgetIds);
     }
@@ -125,7 +96,7 @@ public class CPWBProvider extends AppWidgetProvider {
     }
 
     /**
-     * 桌面上所有该小工具后执行一次，接受到AppWidgetManager.ACTION_APPWIDGET_DISABLED后执行
+     * 桌面上所有该小工具删除后执行一次，接受到AppWidgetManager.ACTION_APPWIDGET_DISABLED后执行
      *
      * @param context
      */
@@ -134,4 +105,21 @@ public class CPWBProvider extends AppWidgetProvider {
         Log.e(TAG, "---CPWBProvider--------onDisabled()");
         super.onDisabled(context);
     }
+
+
+    /**
+     * 刷新Widget内容，该方法刷新所有的窗口，而onUpdate()方法中只刷新对应appWidgetId的窗口
+     *
+     * @param cxt
+     * @param views
+     * @param refreshList 是否刷新列表内容
+     */
+    private void refreshWidget(Context cxt, RemoteViews views, boolean refreshList) {
+        AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(cxt);
+        ComponentName componentName = new ComponentName(cxt, CPWBProvider.class);
+        appWidgetManager.updateAppWidget(appWidgetManager.getAppWidgetIds(componentName), views);
+        if (refreshList)
+            ;
+    }
+
 }
