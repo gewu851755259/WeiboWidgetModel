@@ -3,7 +3,7 @@ ext {
             minSdkVersion    : 15,
             minWearSdkVersion: 23,
             targetSdkVersion : 26,
-            compileSdkVersion: 27,
+            compileSdkVersion: 28,
             buildToolsVersion: '27.0.3'
     ]
 

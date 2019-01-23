@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <declare-styleable name="VerticalSlidingView">
+        <attr name="isSlidingInSearch" format="boolean" />
+        <attr name="titleViewInSearch" format="reference" />
+        <attr name="bodyViewInSearch" format="reference" />
+    </declare-styleable>
+
+</resources>
